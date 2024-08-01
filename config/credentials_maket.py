@@ -7,4 +7,4 @@ dict_pwd = {
     'servidor2'   : 'contraseña2'
 }
 
-dict_serv_bigdata = []
+__BIGDATA_SERVERS__ = []
