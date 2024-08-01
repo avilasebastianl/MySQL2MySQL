@@ -11,10 +11,10 @@
         "table_name_des":"",
         "column_name":"",
         "column_type":"",
-        "mode":""
+        "mode":"REPLACE"
     },
     {   
-        "cid":1,
+        "cid":2,
         "ip_or":"",
         "port_or":"",
         "bbdd_or":"",
@@ -25,10 +25,10 @@
         "table_name_des":"",
         "column_name":"",
         "column_type":"",
-        "mode":""
+        "mode":"TRUNCATE"
     },
     {   
-        "cid":1,
+        "cid":3,
         "ip_or":"",
         "port_or":"",
         "bbdd_or":"",
@@ -39,6 +39,6 @@
         "table_name_des":"",
         "column_name":"",
         "column_type":"",
-        "mode":""
+        "mode":"DELETE"
     }
 ]
