@@ -9,10 +9,10 @@ SELECT
 FROM
     (SELECT 
         (SELECT 
-				{column_name}
+				`{column_name}`
 			FROM
-				{bbdd}.{table_name}
-			ORDER BY {column_name} DESC
+				`{bbdd}`.`{table_name}`
+			ORDER BY `{column_name}` {order_mode}
 			LIMIT 1) AS max,
 		c.COLUMN_TYPE
     FROM
