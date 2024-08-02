@@ -211,7 +211,6 @@ class the_etl:
             last_row, column_type = df.iloc[0,0] ,df.iloc[0,1]
             logging.getLogger("user").debug(f"Last data in {table_name}: {last_row} -> type: {column_type}")
             logging.getLogger("user").info(f"Table {table_name} does not exists in target: executing since {last_row} ")
-            print(df)
         return last_row
 
     # * Funcion para matar querys que impiden la ejecucion del replace sobre una tabla
