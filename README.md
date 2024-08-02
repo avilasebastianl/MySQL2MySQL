@@ -119,6 +119,6 @@ Linux:
     python3 -m venv venv --upgrade-deps
     source venv\bin\activate
 
-pip install -r requirements.txt :hammer_and_wrench:
+pip install -r requirements.txt 
 ```
-El script se ha probado con las librerias especificadas en entornos de Python3.10 y Python3.11 :snake:
+:hammer_and_wrench: El script se ha probado con las librerias especificadas en entornos de Python3.10 y Python3.11 :snake:
