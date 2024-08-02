@@ -102,7 +102,8 @@ Los archivos de configuración JSON deben seguir una estructura específica para
     }
 ]
 ```
-> [!Anotaciones del codigo]:clipboard:
+> [!NOTE] :clipboard:
+> Anotaciones del codigo
 > Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
 > Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
 > Variable 'cid' es un autoincremental
