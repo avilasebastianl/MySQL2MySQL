@@ -4,7 +4,7 @@ Este proyecto realiza una migración de información entre dos instancias de MyS
 ## Descripción General :memo:
 La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de extraer datos de una instancia de MySQL y cargarlos en otra (espejos de información o migraciones rapidas entre servidores agedos a los que el desarrollador administra). El flujo de datos está definido por dos archivos JSON:
 
-**Firstly developed by: @avilasebastianl**:sunglasses:
+**Firstly developed by: @avilasebastianl**:nerd_face:
 
 data_to_run_hora_a_hora.json: Este archivo define las tablas que deben ser migradas cada hora.
 data_to_run_dia_vencido.json: Este archivo define las tablas que deben ser migradas a la madrugada de cada día.
@@ -119,6 +119,6 @@ Linux:
     python3 -m venv venv --upgrade-deps
     source venv\bin\activate
 
-pip install -r requirements.txt
+pip install -r requirements.txt :hammer_and_wrench:
 ```
 El script se ha probado con las librerias especificadas en entornos de Python3.10 y Python3.11 :snake:
