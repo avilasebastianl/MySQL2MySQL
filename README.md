@@ -114,6 +114,9 @@ Los archivos de configuración JSON deben seguir una estructura específica para
 > [!IMPORTANT]
 > El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema.
 
+> [!CAUTION]
+> Si la tabla que se quiere migrar no se encuentra en alguno de los servidores de Big Data, asegurese que el DDL (Metadata) de la creacion de la tabla sea compatible con la configuracion (Preferiblemente realize la creacion de la tabla de manera manual en el destino a partir del DDL del origen sin CONTRAINTS, FOREIGN KEYS y/o AUTOINCREMENTALES).
+
 # Instalación :computer:
 Para instalar las dependencias necesarias, ejecuta el siguiente comando una vez activado el entorno virutal:
 ```bash
