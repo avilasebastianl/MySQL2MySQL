@@ -4,11 +4,7 @@ Este proyecto realiza una migración de información entre dos instancias de MyS
 ## Descripción General :memo:
 La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de extraer datos de una instancia de MySQL y cargarlos en otra (espejos de información o migraciones rapidas entre servidores agedos a los que el desarrollador administra). El flujo de datos está definido por dos archivos JSON:
 
-**Firstly developed by: @avilasebastianl**:nerd_face:
-
-data_to_run_hora_a_hora.json: Este archivo define las tablas que deben ser migradas cada hora.
-data_to_run_dia_vencido.json: Este archivo define las tablas que deben ser migradas a la madrugada de cada día.
-El proceso se ejecuta de forma automática según los intervalos definidos en los archivos de configuración.
+**Firstly developed by:** _@avilasebastianl_ :nerd_face:
 
 ## Estructura del Proyecto :bar_chart:
 
@@ -102,6 +98,7 @@ Los archivos de configuración JSON deben seguir una estructura específica para
     }
 ]
 ```
+
 > [!NOTE]
 > Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
 
@@ -109,13 +106,13 @@ Los archivos de configuración JSON deben seguir una estructura específica para
 > Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
 
 > [!NOTE]
-> Variable 'cid' es un numero incremental que se define manualmente
+> Variable 'cid' es un numero incremental que se define manualmente en cada uno de los JSON.
 
 > [!TIP]
-> Para las tablas que se migren de un servidor a varios pueden manejar el mismo cid, asegurando que iran a la par de cada ejecucion
+> Para las tablas que se migren de un servidor a varios pueden manejar el mismo cid, asi se asegurara que iran a la par en cada ejecucion.
 
 > [!IMPORTANT]
-> El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema
+> El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema.
 
 # Instalación :computer:
 Para instalar las dependencias necesarias, ejecuta el siguiente comando una vez activado el entorno virutal:
