@@ -104,11 +104,17 @@ Los archivos de configuración JSON deben seguir una estructura específica para
 ```
 > [!NOTE]
 > Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
+
 > [!NOTE]
 > Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
+
 > [!NOTE]
-> Variable 'cid' es un autoincremental
-> [!NOTE]
+> Variable 'cid' es un numero incremental que se define manualmente
+
+> [!TIP]
+> Para las tablas que se migren de un servidor a varios pueden manejar el mismo cid, asegurando que iran a la par de cada ejecucion
+
+> [!IMPORTANT]
 > El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema
 
 # Instalación :computer:
