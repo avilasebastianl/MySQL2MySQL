@@ -1,14 +1,16 @@
-# ETL MySQL-to-MySQL
+# ETL MySQL-to-MySQL :rocket:
 Este proyecto realiza una migración de información entre dos instancias de MySQL, utilizando dos archivos JSON que definen las configuraciones para las extracciones hora a hora y a dia vencido.
 
-## Descripción General
+## Descripción General :memo:
 La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de extraer datos de una instancia de MySQL y cargarlos en otra (espejos de información o migraciones rapidas entre servidores agedos a los que el desarrollador administra). El flujo de datos está definido por dos archivos JSON:
+
+**Firstly developed by: @avilasebastianl**:sunglasses:
 
 data_to_run_hora_a_hora.json: Este archivo define las tablas que deben ser migradas cada hora.
 data_to_run_dia_vencido.json: Este archivo define las tablas que deben ser migradas a la madrugada de cada día.
 El proceso se ejecuta de forma automática según los intervalos definidos en los archivos de configuración.
 
-## Estructura del Proyecto
+## Estructura del Proyecto :bar_chart:
 
 ```bash
 ETL-MySQL-to-MySQL/
@@ -27,10 +29,10 @@ ETL-MySQL-to-MySQL/
 │
 ├── docs/
 │   └── documentation.txt
-|
-├── sql/
-│   ├── kill_query.sql
-│   └── last_row.sql
+│
+├── logs/
+│   ├── execution.log
+│   └── error.log
 │
 ├── src/
 │   ├── paths.py
@@ -51,7 +53,7 @@ ETL-MySQL-to-MySQL/
 7. Main.py: Archivo a ejecutar con entorno virtual configurado.
 
 
-# Configuración
+# Configuración :gear:
 Los archivos de configuración JSON deben seguir una estructura específica para definir qué datos deben ser migrados. Aquí hay un ejemplo de cada archivo o pueden basarse en el maket de la carpeta data:
 
 ```bash
@@ -100,13 +102,13 @@ Los archivos de configuración JSON deben seguir una estructura específica para
     }
 ]
 ```
-# Anotaciones del codigo:
-    1. Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
-    2. Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
-    3. Variable 'cid' es un autoincremental
-    4. El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema
+> [!Anotaciones del codigo]:clipboard:
+> Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
+> Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
+> Variable 'cid' es un autoincremental
+> El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema
 
-# Instalación
+# Instalación :computer:
 Para instalar las dependencias necesarias, ejecuta el siguiente comando una vez activado el entorno virutal:
 ```bash
 cd /Carpeta/donde/esta/ubicado/el/proyecto
@@ -119,4 +121,4 @@ Linux:
 
 pip install -r requirements.txt
 ```
-El script se ha probado con las librerias especificadas en entornos de Python3.10 y Python3.11
+El script se ha probado con las librerias especificadas en entornos de Python3.10:snake: y Python3.11:snake:
