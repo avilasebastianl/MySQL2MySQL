@@ -1,0 +1,23 @@
+usage: [-opt] [fecha-inicio] [fecha-fin]
+
+Script para ejecutar una ETL generica para migrar informacion entre instancias de MySQL
+
+help options:
+  -h,     --help          muestra ayuda sobre ejecucion
+  -l,     --list          lista las tablas con su respectivo cid y tipo de dato de la columna filtro
+
+positional arguments (opt):
+  -exe,   --execute       ejecuta todos los elementos dentro del data_to_run respectivo a la hora de ejecucion
+  -c,     --cid           ejecuta el elemento respectivo al cid indicado
+
+optional arguments:
+    fecha-inicio    fecha de inicio de ejecucion 
+    fecha-fin       fecha fin de ejecucion
+
+    ex: 
+        -c [cid] [fecha-inicio] [fecha-fin]
+        [--execute,-exe] 2024-04-04 2024-05-05
+        --cid 15 2024-04-04 00:00:00 2024-05-05 00:00:00
+
+!! Dependiendo al tipo de columna se pasaran los argumentos fecha inicio y fecha fin
+        
