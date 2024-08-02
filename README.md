@@ -102,11 +102,13 @@ Los archivos de configuración JSON deben seguir una estructura específica para
     }
 ]
 ```
-> [!NOTE] <!-- :clipboard: -->
-> Anotaciones del codigo
+> [!NOTE]
 > Existen solo 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
+> [!NOTE]
 > Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
+> [!NOTE]
 > Variable 'cid' es un autoincremental
+> [!NOTE]
 > El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema
 
 # Instalación :computer:
