@@ -4,7 +4,7 @@ Este proyecto realiza una migración de información entre dos instancias de MyS
 ## Descripción General :memo:
 La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de extraer datos de una instancia de MySQL y cargarlos en otra (espejos de información o migraciones rapidas entre servidores agedos a los que el desarrollador administra). El flujo de datos está definido por dos archivos JSON:
 
-**Firstly developed and documented by:** _[@avilasebastianl]_(https://github.com/avilasebastianl) :nerd_face:
+**Firstly developed and documented by:** [@avilasebastianl](https://github.com/avilasebastianl) :nerd_face:
 
 ## Estructura del Proyecto :bar_chart:
 
