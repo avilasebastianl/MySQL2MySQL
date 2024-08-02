@@ -121,4 +121,4 @@ Linux:
 
 pip install -r requirements.txt
 ```
-El script se ha probado con las librerias especificadas en entornos de Python3.10:snake: y Python3.11:snake:
+El script se ha probado con las librerias especificadas en entornos de Python3.10 y Python3.11 :snake:
