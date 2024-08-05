@@ -34,6 +34,8 @@ ETL-MySQL-to-MySQL/
 │   ├── paths.py
 │   └── utils.py
 │
+├── venv/
+│
 ├── Main.pyw
 ├── README.md
 ├── .gitignore
