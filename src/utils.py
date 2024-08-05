@@ -40,13 +40,18 @@ __CHUNKSIZE_TO_INSERT__          = 150000
 __MAX_ID_TO_FILTER__             = 50000
 __INTERVAL_DAY_ROLL_BACK__       = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
 __INTERVAL_HOUR_ROLL_BACK__      = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
-
-dict_dates_format = {
+__DICT_DATES_FORMAT__ : dict[str:str] ={
     "datetime" : "%Y-%m-%d %H:%M:%S",
     "date"     : "%Y-%m-%d"
 }
 
-class database_connections:
+class DatabaseConnections:
+    """
+    Clase para realizar transacciones para el manejo de variables y para las conexiones a MySQL.
+
+    Esta clase proporciona métodos para crear motores de MySQL y extraer información
+    relevante de dichos motores.
+    """
 
     # * Funcion para retornar cadenas de conexion a MySQL
     def mysql_engine(ip:str, port:str, bbdd:str) -> Engine:
@@ -85,7 +90,12 @@ class database_connections:
         elif to_extract in ['BBDD','bbdd']:
             return f"{make_url(str(engine.url)).database}"
     
-class read_files:
+class ReadFiles:
+    """
+    Clase para realizar transacciones para el manejo de archivos SQL y para la obtención de consultas SQL.
+
+    Esta clase proporciona métodos para obtener la consulta SQL formateada y para leer consultas SQL desde archivos.
+    """
 
     # * Funcion para retornar el maximo de fecha de una tabla junto con el tipo de dato
     def get_max_n_type(bbdd:str, table_name:str, column_name:str, order_mode:str) -> str:
@@ -127,7 +137,12 @@ class read_files:
             else:
                 return sql
 
-class the_etl:
+class TheEtl:
+    """
+    Clase para realizar transacciones de ETL (Extract, Transform, Load) genéricas entre instancias de MySQL.
+
+    Esta clase proporciona métodos para ejecutar procesos ETL genéricos, obtener el último registro de una tabla y matar procesos que impiden la ejecución de reemplazos en una tabla.
+    """
 
     # * Funcion de ETL generica
     def generic_etl(engine_or:Engine, engine_des:Engine, table_name_or:str, table_name_des:str, column_name:str, mode:str, fecha_inicio:datetime=None, fecha_fin:datetime=None) -> None:
@@ -151,7 +166,7 @@ class the_etl:
                 sql = f"SELECT * FROM `{table_name_or}` WHERE `{column_name}` BETWEEN '{fecha_inicio}' AND '{fecha_fin}';"
 
             logging.getLogger("user").debug(sql)
-            logging.getLogger("user").info(f"[ START: origin: {database_connections.obtain_info_from_engine(engine_or,'info')} -> target: {database_connections.obtain_info_from_engine(engine_des,'info')} ]")
+            logging.getLogger("user").info(f"[ START: origin: {DatabaseConnections.obtain_info_from_engine(engine_or,'info')} -> target: {DatabaseConnections.obtain_info_from_engine(engine_des,'info')} ]")
             logging.getLogger("user").info(f"[ TABLE: {table_name_or} >> column '{column_name}' range: ( {fecha_inicio if fecha_inicio else '*'} - {fecha_fin if fecha_fin else '*'} ) ]")
 
             with engine_or.connect() as conn_or:
@@ -160,9 +175,9 @@ class the_etl:
             if not df.empty:
                 for i in list(df.select_dtypes(include=['timedelta64']).columns):
                     df[i] = df[i].astype(str).map(lambda x: x[7:])
-                the_etl.kill_processes(engine_des,table_name_des)
+                TheEtl.kill_processes(engine_des,table_name_des)
                 with engine_des.connect() as conn_des:
-                    tabla_real = Table(table_name_des, MetaData(), autoload_with = engine_des if str(database_connections.obtain_info_from_engine(engine_or,'ip')) not in big_data_servers else engine_or) # type: ignore
+                    tabla_real = Table(table_name_des, MetaData(), autoload_with = engine_des if str(DatabaseConnections.obtain_info_from_engine(engine_or,'ip')) not in big_data_servers else engine_or) # type: ignore
                     if mode.lower() == 'truncate':
                         logging.getLogger("user").debug(f"Mode: {mode} -> Truncando e insertando datos en tabla: {table_name_des}")
                         conn_des.execute(text(f"TRUNCATE `{table_name_des}`;"))
@@ -185,7 +200,7 @@ class the_etl:
             else:
                 logging.getLogger("user").info(f"[ EMPTY DATAFRAME: {table_name_or} ]\n")
         except ValueError as e:
-            logging.getLogger("dev").error(f"{e} -> {table_name_or} >> {database_connections.obtain_info_from_engine(engine_or,'info')}")
+            logging.getLogger("dev").error(f"{e} -> {table_name_or} >> {DatabaseConnections.obtain_info_from_engine(engine_or,'info')}")
 
     # * Funcion para obtener el ultimo registro filtrando dentro de una tabla y columna especifica
     def get_last_row(table_name:str, column_name:str, engine_des:Engine, engine_or:Engine) -> str:
@@ -199,19 +214,19 @@ class the_etl:
         Returns:
             str: Ultimo registro dentro de la tabla, sea un tipo fecha hora o id
         """    
-        bbdd = database_connections.obtain_info_from_engine(engine_des,"bbdd")
+        bbdd = DatabaseConnections.obtain_info_from_engine(engine_des,"bbdd")
         table_exists = table_name in inspect(engine_des).get_table_names(schema=bbdd)
         if table_exists:
-            sql = read_files.get_max_n_type(bbdd,table_name,column_name,"DESC")
+            sql = ReadFiles.get_max_n_type(bbdd,table_name,column_name,"DESC")
             with engine_des.connect() as conn:
                 df = pd.read_sql(text(sql),conn)
             last_row, column_type = df.iloc[0,0] ,df.iloc[0,1]
             logging.getLogger("user").debug(f"Last data in {table_name}: {last_row} -> type: {column_type}")
         else:
-            tabla_real = Table(table_name, MetaData(), autoload_with = engine_or if str(database_connections.obtain_info_from_engine(engine_or,'ip')) not in big_data_servers else engine_des) # type: ignore
+            tabla_real = Table(table_name, MetaData(), autoload_with = engine_or if str(DatabaseConnections.obtain_info_from_engine(engine_or,'ip')) not in big_data_servers else engine_des) # type: ignore
             tabla_real.create(bind=engine_des,checkfirst=True)
-            bbdd = database_connections.obtain_info_from_engine(engine_or,"bbdd")
-            sql = read_files.get_max_n_type(bbdd,table_name,column_name,"ASC")
+            bbdd = DatabaseConnections.obtain_info_from_engine(engine_or,"bbdd")
+            sql = ReadFiles.get_max_n_type(bbdd,table_name,column_name,"ASC")
             with engine_or.connect() as conn:
                 df = pd.read_sql(text(sql),conn)
             last_row, column_type = df.iloc[0,0] ,df.iloc[0,1]
@@ -229,7 +244,7 @@ class the_etl:
         """        
         with open(os.path.join(path_to_sql,"kill_query.sql"),'r') as f:
             kill = f.read()
-        usuario = database_connections.obtain_info_from_engine(engine_des,"user")
+        usuario = DatabaseConnections.obtain_info_from_engine(engine_des,"user")
         kill_query = kill.format(usuario=usuario,table_name=table_name)
         logging.getLogger("user").debug(f"Matando querys toxicas")
         try:
@@ -256,7 +271,8 @@ class the_etl:
                         pass
                 logging.getLogger("dev").error(f"Matando : {i}")
 
-class the_execution:
+class TheExecution:
+    """Clase que gestiona la ejecución de procesos ETL basados en archivos JSON y parámetros del sistema."""
 
     # * Funcion de mostrar ayuda
     def show_help() -> None:
@@ -281,11 +297,11 @@ class the_execution:
         """Lista los elementos almacenados en los archivos JSON.
         """        
         print(f"\n[ {'Table':^46} |{'origin (IP:Port) -> target (IP:Port)':^42}| {'Column Type':12} |{'CID':^8}|{'Mode':^17}|{'File':^17}]\n[{'-'*151}]")
-        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Hora a hora':^15} ]") for i in the_execution.data_to_run("data_to_run_hora_a_hora")]
-        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Dia vencido':^15} ]") for i in the_execution.data_to_run("data_to_run_dia_vencido")]
+        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Hora a hora':^15} ]") for i in TheExecution.data_to_run("data_to_run_hora_a_hora")]
+        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Dia vencido':^15} ]") for i in TheExecution.data_to_run("data_to_run_dia_vencido")]
 
     # * Funcion para obetenerlas fechas a ejecutar a partir de los argumentos del sistema
-    def get_start_n_end_dates(auto_execution:bool, type_format:str, fecha_inicio:str = None, fecha_fin:str = None) -> str:
+    def get_start_n_end_dates(auto_execution:bool, type_format:str, fecha_inicio:str=None, fecha_fin:str=None) -> str:
         """Obtiene la fecha inicio y fecha fin a partir de los argumentos del sistema dependiendo del tipo de dato
 
         Args:
@@ -311,7 +327,7 @@ class the_execution:
         """
         avail_cid = []
         cid = int(sys.argv[2]) if len(sys.argv) > 2 else None
-        data_json  = the_execution.data_to_run("data_to_run_hora_a_hora") + the_execution.data_to_run("data_to_run_dia_vencido")
+        data_json  = TheExecution.data_to_run("data_to_run_hora_a_hora") + TheExecution.data_to_run("data_to_run_dia_vencido")
         [ avail_cid.append(i['cid']) for i in data_json ]
         for i in data_json:
             try:
@@ -319,13 +335,13 @@ class the_execution:
                     if cid in avail_cid:
                         if i["cid"] == cid:
                             if str(i['mode']).lower() in __ETL_INSERT_MODE__:
-                                engine_or  = database_connections.mysql_engine(i['ip_or'],i['port_or'],i['bbdd_or'])
-                                engine_des = database_connections.mysql_engine(i['ip_des'],i['port_des'],i['bbdd_des'])
-                                fecha_inicio, fecha_fin = the_execution.get_start_n_end_dates(False,i['column_type'])
+                                engine_or  = DatabaseConnections.mysql_engine(i['ip_or'],i['port_or'],i['bbdd_or'])
+                                engine_des = DatabaseConnections.mysql_engine(i['ip_des'],i['port_des'],i['bbdd_des'])
+                                fecha_inicio, fecha_fin = TheExecution.get_start_n_end_dates(False,i['column_type'])
                                 if not fecha_inicio and not fecha_fin:
-                                    fecha_inicio = the_etl.get_last_row(i['table_name_des'],i['column_name'], engine_des, engine_or)
-                                    fecha_fin    = datetime.now().strftime(dict_dates_format.get(i['column_type'])) if i['column_type'] != 'id' else fecha_inicio + 50000
-                                the_etl.generic_etl(engine_or, engine_des, i['table_name_or'], i['table_name_des'], i['column_name'], i['mode'], fecha_inicio, fecha_fin)
+                                    fecha_inicio = TheEtl.get_last_row(i['table_name_des'],i['column_name'], engine_des, engine_or)
+                                    fecha_fin    = datetime.now().strftime(__DICT_DATES_FORMAT__.get(i['column_type'])) if i['column_type'] != 'id' else fecha_inicio + 50000
+                                TheEtl.generic_etl(engine_or, engine_des, i['table_name_or'], i['table_name_des'], i['column_name'], i['mode'], fecha_inicio, fecha_fin)
                             else:
                                 logging.getLogger("dev").error(f"Unkown method '{i['mode']}'. Valid options: '{', '.join(__ETL_INSERT_MODE__)}'")
                                 sys.exit()
@@ -343,17 +359,17 @@ class the_execution:
         """Funcion que ejecutara todos los elementos dentro del archivo JSON que se encuentre en ejecucion. 
         """        
         file_to_execute = 'data_to_run_hora_a_hora' if __CURRENT_HOUR__ not in [__HOURS_TO_EXECUTE_EXPIRED_DAY__] else 'data_to_run_dia_vencido'
-        for i in the_execution.data_to_run(file_to_execute):
+        for i in TheExecution.data_to_run(file_to_execute):
             try:
                 if i['column_type'] in __DATE_FORMAT_AVAIL__:
                     if str(i['mode']).lower() in __ETL_INSERT_MODE__:
-                        engine_or  = database_connections.mysql_engine(i['ip_or'],i['port_or'],i['bbdd_or'])
-                        engine_des = database_connections.mysql_engine(i['ip_des'],i['port_des'],i['bbdd_des'])
-                        fecha_inicio, fecha_fin = the_execution.get_start_n_end_dates(True,i['column_type'])
+                        engine_or  = DatabaseConnections.mysql_engine(i['ip_or'],i['port_or'],i['bbdd_or'])
+                        engine_des = DatabaseConnections.mysql_engine(i['ip_des'],i['port_des'],i['bbdd_des'])
+                        fecha_inicio, fecha_fin = TheExecution.get_start_n_end_dates(True,i['column_type'])
                         if not fecha_inicio and not fecha_fin:
-                            fecha_inicio = the_etl.get_last_row(i['table_name_des'],i['column_name'], engine_des, engine_or)
-                            fecha_fin    = datetime.now().strftime(dict_dates_format.get(i['column_type'])) if i['column_type'] != 'id' else fecha_inicio + 50000
-                            the_etl.generic_etl(engine_or, engine_des, i['table_name_or'], i['table_name_des'], i['column_name'], i['mode'], fecha_inicio, fecha_fin)
+                            fecha_inicio = TheEtl.get_last_row(i['table_name_des'],i['column_name'], engine_des, engine_or)
+                            fecha_fin    = datetime.now().strftime(__DICT_DATES_FORMAT__.get(i['column_type'])) if i['column_type'] != 'id' else fecha_inicio + 50000
+                            TheEtl.generic_etl(engine_or, engine_des, i['table_name_or'], i['table_name_des'], i['column_name'], i['mode'], fecha_inicio, fecha_fin)
                     else:
                         logging.getLogger("dev").error(f"[ {i['table_name_des']}@{i['ip_des']} >> cid: {i['cid']} with unkown defined method of insertion '{i['mode']}'. Valid options: {__ETL_INSERT_MODE__} ]\n")
                         continue
@@ -365,13 +381,13 @@ class the_execution:
 
     # * Main de ejecucion dependiente del diccionario
     def execution(action) -> None:
-        """Funcion main para la ejecucion mediante banderas del diccionario dict_actions.
+        """Funcion main para la ejecucion mediante banderas del diccionario __DICT_ACTIONS__.
         Args:
             action (_type_): Bandera de ejecucion que se pasa como argumento del sistema
         """        
-        if action in the_execution.dict_actions:
-            if isinstance(the_execution.dict_actions[action], list):
-                for func in the_execution.dict_actions[action]:
+        if action in TheExecution.__DICT_ACTIONS__:
+            if isinstance(TheExecution.__DICT_ACTIONS__[action], list):
+                for func in TheExecution.__DICT_ACTIONS__[action]:
                     try:
                         func()
                     except ValueError as e:
@@ -380,7 +396,7 @@ class the_execution:
                         continue
             else:
                 try:
-                    the_execution.dict_actions[action]()
+                    TheExecution.__DICT_ACTIONS__[action]()
                 except ValueError as e:
                     logging.getLogger("dev").error(e)
                 finally:
@@ -389,7 +405,7 @@ class the_execution:
             logging.getLogger("dev").error("Unknown action provided, use '--help' flag to check availables")
 
     # * Diccionario de banderas para ejecucion por consola
-    dict_actions:dict[str:str] = {
+    __DICT_ACTIONS__:dict[str:str] = {
         '--help'         : show_help,               # TODO: Muestra la ayuda para ejecucion 
         '-h'             : show_help,               # * """"""
         '--list'         : list_cid_tables,         # TODO: lista las tablas que se estan migrando automaticamente (a dia vencido y hora a hora)
