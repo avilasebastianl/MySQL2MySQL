@@ -1,20 +1,19 @@
 import os
 import sys
-import glob 
 import time
 import yaml
 import json
 import logging
 import datetime
-import numpy as np
 import pandas as pd
 import logging.config
 from paths import *
-from pandas import DataFrame
+from datetime import datetime
 from urllib.parse import quote
-from datetime import timedelta, datetime
+from pandas import json_normalize
 from sqlalchemy.engine import reflection
 from sqlalchemy.engine.url import make_url
+from sqlalchemy.dialects.mysql import insert
 from sqlalchemy import Table, MetaData, create_engine, Column,text,Engine,inspect
 sys.path.append(path_to_config)
 from credentials import * # type: ignore
@@ -30,17 +29,17 @@ with open(os.path.join(path_to_config,"logger.yml")) as f:
     logging.config.dictConfig(yaml.safe_load(f))
 
 # TODO: Declaracion de constantes
-__HOURS_TO_EXECUTE_EXPIRED_DAY__ = [4,6] # * Numero entero de las horas en la se ejecutara el archivo dia_vvencido.json
-__ETL_INSERT_MODE__              = ['delete','truncate','replace'] # * Modos de insercion de datos en la tabla destino
-__DATE_FORMAT_AVAIL__            = ['date','datetime','int'] # * Modos de insercion de datos en la tabla destino
-__CURRENT_HOUR__                 = int(datetime.now().strftime("%H"))
-__BASE_DATETIME_TO_EXECUTE__     = "2024-04-01 00:00:00" 
-__BASE_DATE_TO_EXECUTE__         = "2024-04-01"
-__CHUNKSIZE_TO_INSERT__          = 150000
-__MAX_ID_TO_FILTER__             = 50000
-__INTERVAL_DAY_ROLL_BACK__       = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
-__INTERVAL_HOUR_ROLL_BACK__      = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
-__DICT_DATES_FORMAT__ : dict[str:str] ={
+__HOURS_TO_EXECUTE_EXPIRED_DAY__      = [4,6] # * Numero entero de las horas en la se ejecutara el archivo dia_vvencido.json
+__ETL_INSERT_MODE__                   = ['delete','truncate','replace'] # * Modos de insercion de datos en la tabla destino
+__DATE_FORMAT_AVAIL__                 = ['date','datetime','int','id'] # * Modos de insercion de datos en la tabla destino
+__CURRENT_HOUR__                      = int(datetime.now().strftime("%H"))
+__BASE_DATETIME_TO_EXECUTE__          = "2024-04-01 00:00:00" 
+__BASE_DATE_TO_EXECUTE__              = "2024-04-01"
+__CHUNKSIZE_TO_INSERT__               = 150000
+__MAX_ID_TO_FILTER__                  = 50000
+__INTERVAL_DAY_ROLL_BACK__            = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
+__INTERVAL_HOUR_ROLL_BACK__           = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
+__DICT_DATES_FORMAT__ : dict[str:str] = {
     "datetime" : "%Y-%m-%d %H:%M:%S",
     "date"     : "%Y-%m-%d"
 }
@@ -55,7 +54,8 @@ class DatabaseConnections:
 
     # * Funcion para retornar cadenas de conexion a MySQL
     def mysql_engine(ip:str, port:str, bbdd:str) -> Engine:
-        """Creacion de motor de MySQL para generar conexiones y acceso a metadata segun la base de datos obtenida
+        """
+        Creacion de motor de MySQL para generar conexiones y acceso a metadata segun la base de datos obtenida
 
         Args:
             ip (str): IP de instancia de MySQL destino de conexion
@@ -73,7 +73,8 @@ class DatabaseConnections:
 
     # * Funcion para obetener el usuario con el cual se hizo la url del motor de MySQL
     def obtain_info_from_engine(engine:Engine, to_extract:str) -> str:
-        """Extrae el nombre del usuario con el cual se crea de datos del string del engine.
+        """
+        Extrae el nombre del usuario con el cual se crea de datos del string del engine.
 
         Args:
             engine (Engine): Motor de MySQL.
@@ -99,7 +100,8 @@ class ReadFiles:
 
     # * Funcion para retornar el maximo de fecha de una tabla junto con el tipo de dato
     def get_max_n_type(bbdd:str, table_name:str, column_name:str, order_mode:str) -> str:
-        """Funcion para obtener el ultimo dato de una columna en especifica de la tabla proporcionada de manera ascendente o desendente segun parametro
+        """
+        Funcion para obtener el ultimo dato de una columna en especifica de la tabla proporcionada de manera ascendente o desendente segun parametro
 
         Args:
             bbdd (str): Base de datos donde se encuentra la tabla
@@ -119,8 +121,9 @@ class ReadFiles:
         return sql
     
     # * Funcion para leer querys y formatear en el caso que sea necesario
-    def get_sql_query(file:str, table_name:str, fecha_inicio:str=None, fecha_fin:str=None) -> str:
-        """Funcion provee una query de tipo select filtrada o no segun parametros dado
+    def get_sql_query(file:str, table_name:str=None, fecha_inicio:str=None, fecha_fin:str=None) -> str:
+        """
+        Funcion provee una query de tipo select filtrada o no segun parametros dado
 
         Args:
             file (str): Ruta al archivo que almacena la query a ejecutar.
@@ -132,7 +135,7 @@ class ReadFiles:
         """        
         with open(os.path.join(path_to_sql,f"{file}.sql"),'r') as f:
             sql = f.read()
-            if fecha_inicio and fecha_fin:
+            if fecha_inicio and fecha_fin and table_name:
                 return sql.format(table_name = table_name,fecha_inicio = fecha_inicio,fecha_fin = fecha_fin)
             else:
                 return sql
@@ -146,7 +149,8 @@ class TheEtl:
 
     # * Funcion de ETL generica
     def generic_etl(engine_or:Engine, engine_des:Engine, table_name_or:str, table_name_des:str, column_name:str, mode:str, fecha_inicio:datetime=None, fecha_fin:datetime=None) -> None:
-        """ETL generic de entornos de MySQL a MySQL para generar espejos de tablas en los servidores de Big Data
+        """
+        ETL generic de entornos de MySQL a MySQL para generar espejos de tablas en los servidores de Big Data
 
         Args:
             engine_or (Engine): Motor de MySQL de la instancia origen.
@@ -204,7 +208,8 @@ class TheEtl:
 
     # * Funcion para obtener el ultimo registro filtrando dentro de una tabla y columna especifica
     def get_last_row(table_name:str, column_name:str, engine_des:Engine, engine_or:Engine) -> str:
-        """ Obtiene el ultimo registro (Maximo) almacenado dentro de una tabla especifica filtrando por la columna asignada en el destino. Si no existe la tabla en el destino obtendra el minimo en el origen
+        """ 
+        Obtiene el ultimo registro (Maximo) almacenado dentro de una tabla especifica filtrando por la columna asignada en el destino. Si no existe la tabla en el destino obtendra el minimo en el origen
 
         Args:
             table_name (str): Nombre de la tabla
@@ -236,7 +241,8 @@ class TheEtl:
 
     # * Funcion para matar querys que impiden la ejecucion del replace sobre una tabla
     def kill_processes(engine_des:Engine, table_name:str) -> None:
-        """Funcion para matar querys que esten obstruyendo la insercion en la tabla destino
+        """
+        Funcion para matar querys que esten obstruyendo la insercion en la tabla destino
 
         Args:
             engine_des (Engine): Motor de MySQL en donde se mataran querys toxicas.
@@ -256,7 +262,7 @@ class TheEtl:
                     try:
                         conn_des.execute(text(f"KILL {i}"))
                     except:
-                        pass
+                        continue
                 logging.getLogger("dev").error(f"Matando : {i}")
         except ValueError as e:
             logging.getLogger("dev").error(e)
@@ -268,22 +274,71 @@ class TheEtl:
                     try:
                         conn_des.execute(text(f"KILL {i}"))
                     except:
-                        pass
+                        continue
                 logging.getLogger("dev").error(f"Matando : {i}")
 
+class TheMetadata:
+    """
+    Clase que gestiona la metadata de los archivos JSON en una base de datos.
+    """
+
+    # * Funcion para insertar los archivos JSON en la tabla metadata del administrador
+    def import_json() -> None:
+        """
+        Funcion para importar la metadata de los archivos JSON en la tabla matriz del adminitrador del desarrollo
+        """        
+        data_to_run = {
+            "data_to_run_dia_vencido": "Dia vencido",
+            "data_to_run_hora_a_hora": "Hora a hora"
+        }
+        dfs = [json_normalize(TheExecution.data_to_run(key)).assign(ejecucion=value)
+            for key, value in data_to_run.items()]
+        df_concat = pd.concat(dfs, axis=0).drop(columns=['cid'])
+        engine_dw = DatabaseConnections.mysql_engine(admin_ip,admin_port,admin_bbdd) # type: ignore
+        with engine_dw.connect() as conn_dw:
+            conn_dw.execute(text(ReadFiles.get_sql_query("create_metadata_table")))
+            conn_dw.execute(text("DROP TABLE IF EXISTS tb_metadata_espejos_de_tablas_tmp;"))
+            df_concat.to_sql("tb_metadata_espejos_de_tablas_tmp", conn_dw, if_exists="append", index=False, chunksize=10)
+            conn_dw.execute(text("REPLACE INTO tb_metadata_espejos_de_tablas SELECT * FROM tb_metadata_espejos_de_tablas_tmp;"))
+            conn_dw.execute(text("DROP TABLE tb_metadata_espejos_de_tablas_tmp;"))
+        logging.getLogger("user").info(f"[ SUCCESS -> JSON objects imported >> {DatabaseConnections.obtain_info_from_engine(engine_dw,'info')} ]")
+    
+    # * Funcion para exportar los archivos JSON de las tablas metadata del administrador
+    def export_json() -> None:
+        """
+        Funcion para exportar la informacion en el formato json indicado segun la tabla del adminitrador ubicada en la instancia MySQL seleccionada
+        """        
+        data_to_run = {
+            "Dia vencido" :"data_to_run_dia_vencido",
+            "Hora a hora" :"data_to_run_hora_a_hora"
+        }
+        for i in data_to_run.keys():
+            with open(os.path.join(path_to_sql,"createJSON.sql"),'r') as f:
+                get_json = f.read()
+            get_json = get_json.format(ejecucion=i)
+            engine_dw = DatabaseConnections.mysql_engine(admin_ip,admin_port,admin_bbdd) # type: ignore
+            with engine_dw.connect() as conn_dw:
+                df = pd.read_sql(text(get_json),conn_dw)
+            df.to_json(os.path.join(path_to_data,f"{data_to_run.get(i)}.json"),orient="records",index=False,indent=2,force_ascii=False)
+            logging.getLogger("user").info(f"[ SUCCESS -> JSON objects exported {i} >> {DatabaseConnections.obtain_info_from_engine(engine_dw,'info')} ]")
+
 class TheExecution:
-    """Clase que gestiona la ejecución de procesos ETL basados en archivos JSON y parámetros del sistema."""
+    """
+    Clase que gestiona la ejecución de procesos ETL basados en archivos JSON y parámetros del sistema.
+    """
 
     # * Funcion de mostrar ayuda
     def show_help() -> None:
-        """Funcion que abre la documentacion sobre la ejecucion del script
+        """
+        Funcion que abre la documentacion sobre la ejecucion del script
         """        
         with open(os.path.join(path_to_docs,"documentation.txt"),'r') as file:
             print(file.read())
 
     # * Funcion para leer el archivo .json con las tablas a ejecutar
     def data_to_run(file:str) -> json:
-        """Lectura de archivo JSON con los elementos a ejecutar en proceso de ETL
+        """
+        Lectura de archivo JSON con los elementos a ejecutar en proceso de ETL
         Args:
             file (Engine): Nombre del archivo .JSON que se va a leer..
         Returns:
@@ -294,15 +349,17 @@ class TheExecution:
 
     # * Funcion para listar tablas con su respectivo cid 
     def list_cid_tables() -> None:
-        """Lista los elementos almacenados en los archivos JSON.
+        """
+        Lista los elementos almacenados en los archivos JSON.
         """        
-        print(f"\n[ {'Table':^46} |{'origin (IP:Port) -> target (IP:Port)':^42}| {'Column Type':12} |{'CID':^8}|{'Mode':^17}|{'File':^17}]\n[{'-'*151}]")
-        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Hora a hora':^15} ]") for i in TheExecution.data_to_run("data_to_run_hora_a_hora")]
-        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':45}  | {i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':>12}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':<5} -> {i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':>12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':<5} | {i['column_type'] if len(str(i['column_type'])) > 0 else 'None':^12} | {i['cid'] if len(str(i['cid'])) > 0 else 'None':^5}  | {i['mode'] if len(str(i['mode'])) > 0 else 'None' :^15} | {'Dia vencido':^15} ]") for i in TheExecution.data_to_run("data_to_run_dia_vencido")]
+        print(f"\n[ {'Table':^46} |{'origin (IP:Port) -> target (IP:Port)':^45}| {'Column Type':12} |{'CID':^8}|{'Mode':^17}|{'File':^17}]\n[{'-'*154}]")
+        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':-<47}|{i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':->16}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':-<5}->{i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':->12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':-<8}|{i['column_type'] if len(str(i['column_type'])) > 0 else 'None':-^14}|{i['cid'] if len(str(i['cid'])) > 0 else 'None':-^8}|{i['mode'] if len(str(i['mode'])) > 0 else 'None' :-^17}|{'Hora a hora':-^17}]") for i in TheExecution.data_to_run("data_to_run_hora_a_hora")]
+        [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':-<47}|{i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':->16}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':-<5}->{i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':->12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':-<8}|{i['column_type'] if len(str(i['column_type'])) > 0 else 'None':-^14}|{i['cid'] if len(str(i['cid'])) > 0 else 'None':-^8}|{i['mode'] if len(str(i['mode'])) > 0 else 'None' :-^17}|{'Dia vencido':-^17}]") for i in TheExecution.data_to_run("data_to_run_dia_vencido")]
 
     # * Funcion para obetenerlas fechas a ejecutar a partir de los argumentos del sistema
     def get_start_n_end_dates(auto_execution:bool, type_format:str, fecha_inicio:str=None, fecha_fin:str=None) -> str:
-        """Obtiene la fecha inicio y fecha fin a partir de los argumentos del sistema dependiendo del tipo de dato
+        """
+        Obtiene la fecha inicio y fecha fin a partir de los argumentos del sistema dependiendo del tipo de dato
 
         Args:
             auto_execution (bool): Opcion para verificar si la ejecucion es masiva o por medio de cid
@@ -313,17 +370,26 @@ class TheExecution:
         Returns:
             str: Retorna la fecha inicio y fecha fin para ejecucion del proceso ETl
         """
-        if type_format.lower() == 'datetime':
-            fecha_inicio = f"{sys.argv[ 2 if auto_execution == True else 3 ]} {sys.argv[ 3 if auto_execution == True else 4 ]}" if len(sys.argv) > 4 else None
-            fecha_fin    = f"{sys.argv[ 4 if auto_execution == True else 5 ]} {sys.argv[ 5 if auto_execution == True else 6 ]}" if len(sys.argv) > 6 else None
-        elif type_format.lower() in ['date','id']:
-            fecha_inicio = sys.argv[ 2 if auto_execution == True else 3 ] if len(sys.argv) > 3 else None
-            fecha_fin    = sys.argv[ 4 if auto_execution == True else 5 ] if len(sys.argv) > 5 else None
+        if auto_execution == True:
+            if type_format.lower() == 'datetime':
+                fecha_inicio = f"{sys.argv[2]} {sys.argv[3]}" if len(sys.argv) > 4 else None
+                fecha_fin    = f"{sys.argv[4]} {sys.argv[5]}" if len(sys.argv) > 6 else None
+            elif type_format.lower() in ['date','id','int']:
+                fecha_inicio = sys.argv[2] if len(sys.argv) > 3 else None
+                fecha_fin    = sys.argv[4] if len(sys.argv) > 4 else None
+        else:
+            if type_format.lower() == 'datetime':
+                fecha_inicio = f"{sys.argv[3]} {sys.argv[4]}" if len(sys.argv) > 4 else None
+                fecha_fin    = f"{sys.argv[5]} {sys.argv[6]}" if len(sys.argv) > 6 else None
+            elif type_format.lower() in ['date','id','int']:
+                fecha_inicio = sys.argv[3] if len(sys.argv) > 3 else None
+                fecha_fin    = sys.argv[4] if len(sys.argv) > 4 else None
         return fecha_inicio, fecha_fin
 
     # * Funcion de ejecucion mediante cid   
     def exec_by_cid() -> None:
-        """Funcion para ejecutar la etl de una tabla en especifico dado su CID que se pasa como argumento
+        """
+        Funcion para ejecutar la etl de una tabla en especifico dado su CID que se pasa como argumento
         """
         avail_cid = []
         cid = int(sys.argv[2]) if len(sys.argv) > 2 else None
@@ -356,7 +422,8 @@ class TheExecution:
 
     # * Funcion de ejecucion de distro
     def exec_data_auto() -> None:
-        """Funcion que ejecutara todos los elementos dentro del archivo JSON que se encuentre en ejecucion. 
+        """
+        Funcion que ejecutara todos los elementos dentro del archivo JSON que se encuentre en ejecucion. 
         """        
         file_to_execute = 'data_to_run_hora_a_hora' if __CURRENT_HOUR__ not in [__HOURS_TO_EXECUTE_EXPIRED_DAY__] else 'data_to_run_dia_vencido'
         for i in TheExecution.data_to_run(file_to_execute):
@@ -380,8 +447,9 @@ class TheExecution:
                 continue
 
     # * Main de ejecucion dependiente del diccionario
-    def execution(action) -> None:
-        """Funcion main para la ejecucion mediante banderas del diccionario __DICT_ACTIONS__.
+    def execution(action:str) -> None:
+        """
+        Funcion main para la ejecucion mediante banderas del diccionario __DICT_ACTIONS__.
         Args:
             action (_type_): Bandera de ejecucion que se pasa como argumento del sistema
         """        
@@ -405,7 +473,7 @@ class TheExecution:
             logging.getLogger("dev").error("Unknown action provided, use '--help' flag to check availables")
 
     # * Diccionario de banderas para ejecucion por consola
-    __DICT_ACTIONS__:dict[str:str] = {
+    __DICT_ACTIONS__: dict[str:str]= {
         '--help'         : show_help,               # TODO: Muestra la ayuda para ejecucion 
         '-h'             : show_help,               # * """"""
         '--list'         : list_cid_tables,         # TODO: lista las tablas que se estan migrando automaticamente (a dia vencido y hora a hora)
@@ -418,5 +486,5 @@ class TheExecution:
 
 if __name__ == '__main__':
 
-    pass
+    pass # * Comentar esta linea para realizar pruebas con el main del archivo.
     
