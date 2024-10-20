@@ -20,4 +20,3 @@ optional arguments:
         --cid 15 2024-04-04 00:00:00 2024-05-05 00:00:00
 
 !! Dependiendo al tipo de columna se pasaran los argumentos fecha inicio y fecha fin
-        
