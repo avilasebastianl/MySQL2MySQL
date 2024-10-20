@@ -1,0 +1,39 @@
+version: 1
+loggers:
+  user:
+    handlers:
+      - file
+      - console
+    level: DEBUG
+  dev:
+    handlers:
+      - error
+      - show_e
+    level: INFO
+    
+handlers:
+  file:
+    class: logging.FileHandler
+    level: INFO
+    filename: {path_to_logs}\execution.log
+    formatter: detail
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: brief
+  error:
+    class: logging.FileHandler
+    level: INFO
+    filename: {path_to_logs}\error.log
+    formatter: detail
+  show_e:
+    class: logging.StreamHandler
+    level: ERROR
+    formatter: brief
+
+formatters:
+  detail:
+    format: '[%(asctime)s >> %(levelname)-8s] %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  brief:
+    format: '[%(levelname)-5s]:  %(message)s'
