@@ -1,3 +1,9 @@
+"""
+Modulo principal de clases metodos y funciones
+# ! Developed by: @avilasebastianl
+# ! Fecha inicio de desarrollo: 2024-07-13
+"""
+
 import os
 import sys
 import time
@@ -18,30 +24,34 @@ from sqlalchemy import Table, MetaData, create_engine, Column,text,Engine,inspec
 sys.path.append(path_to_config)
 from credentials import * # type: ignore
 
-"""
-# ! Primer desarrollador: @avilasebastianl
-# ! Fecha de inicio de desarrollo: 2024-07-13
-# ! Fecha de inicio de produccion: None
-"""
-
 # TODO: Configuracion de logger
-with open(os.path.join(path_to_config,"logger.yml")) as f:
+with open(join_func(path_to_config,"logger.yml")) as f:
     logging.config.dictConfig(yaml.safe_load(f))
 
-# TODO: Declaracion de constantes
-__HOURS_TO_EXECUTE_EXPIRED_DAY__      = [4,6] # * Numero entero de las horas en la se ejecutara el archivo dia_vvencido.json
-__ETL_INSERT_MODE__                   = ['delete','truncate','replace'] # * Modos de insercion de datos en la tabla destino
-__DATE_FORMAT_AVAIL__                 = ['date','datetime','int','id'] # * Modos de insercion de datos en la tabla destino
-__CURRENT_HOUR__                      = int(datetime.now().strftime("%H"))
-__BASE_DATETIME_TO_EXECUTE__          = "2024-04-01 00:00:00" 
-__BASE_DATE_TO_EXECUTE__              = "2024-04-01"
-__CHUNKSIZE_TO_INSERT__               = 150000
-__MAX_ID_TO_FILTER__                  = 50000
-__INTERVAL_DAY_ROLL_BACK__            = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
-__INTERVAL_HOUR_ROLL_BACK__           = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
-__DICT_DATES_FORMAT__ : dict[str:str] = {
+# ! DECLARACION DE CONSTANTES
+# Numero entero de las horas en la se ejecutara el archivo dia_vencido.json
+__HOURS_TO_EXECUTE_EXPIRED_DAY__:list[int] = [4,6]
+# Modos de insercion de datos en la tabla destino
+__ETL_INSERT_MODE__:list[str] = ['delete','truncate','replace']
+# Modos de insercion de datos en la tabla destino
+__DATE_FORMAT_AVAIL__: list[str] = ['date','datetime','int','id']
+# Entero de la hora actual
+__CURRENT_HOUR__:int = int(datetime.now().strftime("%H"))
+# Fecha de inicio de las consultas que no existen en el destino
+__BASE_DATETIME_TO_EXECUTE__:str = "2024-04-01 00:00:00"
+__BASE_DATE_TO_EXECUTE__:str = "2024-04-01"
+# Cantidad de registros enviado a mysql por paquetes
+__CHUNKSIZE_TO_INSERT__:int = 150000
+# Numero de registros los cuales se filtraran cuando 
+# sea la columna filtro un autoincremental
+__MAX_ID_TO_FILTER__:int = 50000
+# Maximo de dias que se se vann a ejecutar hacia atras
+__INTERVAL_DAY_ROLL_BACK__:int = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
+__INTERVAL_HOUR_ROLL_BACK__:int = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
+# Dicionario de formatos para las fechas
+__DICT_DATES_FORMAT__:dict[str:str] = {
     "datetime" : "%Y-%m-%d %H:%M:%S",
-    "date"     : "%Y-%m-%d"
+    "date" : "%Y-%m-%d"
 }
 
 class DatabaseConnections:
@@ -64,33 +74,34 @@ class DatabaseConnections:
 
         Returns:
             Engine: Motor de MySQL. Solo se accede a la metadata de la base de datos ingresada.
-        """    
-        if ip in dict_user.keys():
+        """
+        if ip in dict_user.keys(): # type:ignore
             return create_engine(f'mysql+pymysql://{dict_user.get(ip)}:{quote(dict_pwd.get(ip))}@{ip}:{port}/{bbdd}',pool_recycle=9600,isolation_level="AUTOCOMMIT") # type: ignore
         else:
             logging.getLogger("dev").error(f"Unkown IP '{ip}'. First add it to the credentials file diccionary with it's user and password")
-            sys.exit()
+            sys.exit(1)
 
     # * Funcion para obetener el usuario con el cual se hizo la url del motor de MySQL
-    def obtain_info_from_engine(engine:Engine, to_extract:str) -> str:
+    def obtain_info_from_engine(engine: Engine, to_extract: str) -> str:
         """
-        Extrae el nombre del usuario con el cual se crea de datos del string del engine.
+        Extrae información sobre el motor de MySQL basándose en el parámetro to_extract.
 
         Args:
             engine (Engine): Motor de MySQL.
+            to_extract (str): Indicador de qué información extraer ('usuario', 'info', 'ip', 'bbdd').
 
         Returns:
-            str: Nombre de la base de datos.
+            str: Información extraída según to_extract.
         """
-        if to_extract in ['usuario','user']:
-            return make_url(str(engine.url)).username
-        elif to_extract in ['info','information']:
-            return f"{make_url(str(engine.url)).host}:{make_url(str(engine.url)).port}@{make_url(str(engine.url)).database}"
-        elif to_extract in ['ip','IP']:
-            return f"{make_url(str(engine.url)).host}:{make_url(str(engine.url)).port}@{make_url(str(engine.url)).database}"
-        elif to_extract in ['BBDD','bbdd']:
-            return f"{make_url(str(engine.url)).database}"
-    
+        info_map:dict[str:str] = {
+            'usuario': lambda _ : engine.url.username,
+            'user': lambda _ : engine.url.username,
+            'info': lambda _ : f"{engine.url.host}:{engine.url.port}@{engine.url.database}",
+            'ip': lambda _ : f"{engine.url.host}:{engine.url.port}@{engine.url.database}",
+            'bbdd': lambda _ : engine.url.database
+        }
+        return info_map.get(to_extract.lower(), lambda _: "")()
+
 class ReadFiles:
     """
     Clase para realizar transacciones para el manejo de archivos SQL y para la obtención de consultas SQL.
@@ -111,15 +122,15 @@ class ReadFiles:
 
         Returns:
             str: MySQL query lista para ejecucion formateada segundo los parametros.
-        """        
-        with open(os.path.join(path_to_sql,"last_row.sql"),'r') as f:
+        """
+        with open(join_func(path_to_share,"last_row.sql"),'r') as f:
             sql = f.read()
         sql = sql.format(bbdd = bbdd, table_name = table_name, column_name = column_name,\
                         __INTERVAL_DAY_ROLL_BACK__ = __INTERVAL_DAY_ROLL_BACK__,\
-                        __INTERVAL_HOUR_ROLL_BACK__ = __INTERVAL_HOUR_ROLL_BACK__,
+                        __INTERVAL_HOUR_ROLL_BACK__ = __INTERVAL_HOUR_ROLL_BACK__,\
                         order_mode = 'DESC' if order_mode.lower() == 'desc' else 'ASC')
         return sql
-    
+
     # * Funcion para leer querys y formatear en el caso que sea necesario
     def get_sql_query(file:str, table_name:str=None, fecha_inicio:str=None, fecha_fin:str=None) -> str:
         """
@@ -132,8 +143,8 @@ class ReadFiles:
 
         Returns:
             str: Consulta de MySQL para ejecucion y obtenion de DataFrame
-        """        
-        with open(os.path.join(path_to_sql,f"{file}.sql"),'r') as f:
+        """
+        with open(join_func(path_to_share,f"{file}.sql"),'r') as f:
             sql = f.read()
             if fecha_inicio and fecha_fin and table_name:
                 return sql.format(table_name = table_name,fecha_inicio = fecha_inicio,fecha_fin = fecha_fin)
@@ -150,7 +161,7 @@ class TheEtl:
     # * Funcion de ETL generica
     def generic_etl(engine_or:Engine, engine_des:Engine, table_name_or:str, table_name_des:str, column_name:str, mode:str, fecha_inicio:datetime=None, fecha_fin:datetime=None) -> None:
         """
-        ETL generic de entornos de MySQL a MySQL para generar espejos de tablas en los servidores de Big Data
+        ETL generica de entornos de MySQL a MySQL para generar espejos de tablas en los servidores de Big Data
 
         Args:
             engine_or (Engine): Motor de MySQL de la instancia origen.
@@ -161,7 +172,7 @@ class TheEtl:
             mode (str): Modo de insercion en la tabla destino.
             fecha_inicio (datetime, optional): Filtro de fecha inicio o id desde donde se hara el filtro. Defaults to None.
             fecha_fin (datetime, optional): Filtro de fecha de fin o id desde donde se hara el filtro. (Defaults: columns type date: 2024-04-01 -> type datetime: 2024-04-01 00:00:00 -> type int: 1).
-        """         
+        """
         ini = time.time()
         try:
             if (fecha_inicio == '*' or fecha_fin == '*') or (not fecha_inicio and not fecha_fin):
@@ -208,7 +219,7 @@ class TheEtl:
 
     # * Funcion para obtener el ultimo registro filtrando dentro de una tabla y columna especifica
     def get_last_row(table_name:str, column_name:str, engine_des:Engine, engine_or:Engine) -> str:
-        """ 
+        """
         Obtiene el ultimo registro (Maximo) almacenado dentro de una tabla especifica filtrando por la columna asignada en el destino. Si no existe la tabla en el destino obtendra el minimo en el origen
 
         Args:
@@ -218,7 +229,7 @@ class TheEtl:
 
         Returns:
             str: Ultimo registro dentro de la tabla, sea un tipo fecha hora o id
-        """    
+        """
         bbdd = DatabaseConnections.obtain_info_from_engine(engine_des,"bbdd")
         table_exists = table_name in inspect(engine_des).get_table_names(schema=bbdd)
         if table_exists:
@@ -247,8 +258,8 @@ class TheEtl:
         Args:
             engine_des (Engine): Motor de MySQL en donde se mataran querys toxicas.
             table_name (str): Nombre de la tabla destino
-        """        
-        with open(os.path.join(path_to_sql,"kill_query.sql"),'r') as f:
+        """
+        with open(join_func(path_to_share,"kill_query.sql"),'r') as f:
             kill = f.read()
         usuario = DatabaseConnections.obtain_info_from_engine(engine_des,"user")
         kill_query = kill.format(usuario=usuario,table_name=table_name)
@@ -256,7 +267,7 @@ class TheEtl:
         try:
             with engine_des.connect() as conn_des:
                 df = pd.read_sql(text(kill_query),conn_des)
-            ids = df['id'].tolist()                    
+            ids = df['id'].tolist()
             for i in ids:
                 with engine_des.connect() as conn_des:
                     try:
@@ -268,7 +279,7 @@ class TheEtl:
             logging.getLogger("dev").error(e)
             with engine_des.connect() as conn_des:
                 df = pd.read_sql(text(kill_query),conn_des)
-            ids = df['id'].tolist()                    
+            ids = df['id'].tolist()
             for i in ids:
                 with engine_des.connect() as conn_des:
                     try:
@@ -286,8 +297,8 @@ class TheMetadata:
     def import_json() -> None:
         """
         Funcion para importar la metadata de los archivos JSON en la tabla matriz del adminitrador del desarrollo
-        """        
-        data_to_run = {
+        """
+        data_to_run:dict[str:str] = {
             "data_to_run_dia_vencido": "Dia vencido",
             "data_to_run_hora_a_hora": "Hora a hora"
         }
@@ -302,24 +313,24 @@ class TheMetadata:
             conn_dw.execute(text("REPLACE INTO tb_metadata_espejos_de_tablas SELECT * FROM tb_metadata_espejos_de_tablas_tmp;"))
             conn_dw.execute(text("DROP TABLE tb_metadata_espejos_de_tablas_tmp;"))
         logging.getLogger("user").info(f"[ SUCCESS -> JSON objects imported >> {DatabaseConnections.obtain_info_from_engine(engine_dw,'info')} ]")
-    
+
     # * Funcion para exportar los archivos JSON de las tablas metadata del administrador
     def export_json() -> None:
         """
         Funcion para exportar la informacion en el formato json indicado segun la tabla del adminitrador ubicada en la instancia MySQL seleccionada
-        """        
+        """
         data_to_run = {
             "Dia vencido" :"data_to_run_dia_vencido",
             "Hora a hora" :"data_to_run_hora_a_hora"
         }
         for i in data_to_run.keys():
-            with open(os.path.join(path_to_sql,"createJSON.sql"),'r') as f:
+            with open(join_func(path_to_share,"createJSON.sql"),'r') as f:
                 get_json = f.read()
             get_json = get_json.format(ejecucion=i)
             engine_dw = DatabaseConnections.mysql_engine(admin_ip,admin_port,admin_bbdd) # type: ignore
             with engine_dw.connect() as conn_dw:
                 df = pd.read_sql(text(get_json),conn_dw)
-            df.to_json(os.path.join(path_to_data,f"{data_to_run.get(i)}.json"),orient="records",index=False,indent=2,force_ascii=False)
+            df.to_json(join_func(path_to_data,f"{data_to_run.get(i)}.json"),orient="records",index=False,indent=2,force_ascii=False)
             logging.getLogger("user").info(f"[ SUCCESS -> JSON objects exported {i} >> {DatabaseConnections.obtain_info_from_engine(engine_dw,'info')} ]")
 
 class TheExecution:
@@ -331,8 +342,8 @@ class TheExecution:
     def show_help() -> None:
         """
         Funcion que abre la documentacion sobre la ejecucion del script
-        """        
-        with open(os.path.join(path_to_docs,"documentation.txt"),'r') as file:
+        """
+        with open(join_func(path_to_docs,"documentation.txt"),'r') as file:
             print(file.read())
 
     # * Funcion para leer el archivo .json con las tablas a ejecutar
@@ -343,15 +354,15 @@ class TheExecution:
             file (Engine): Nombre del archivo .JSON que se va a leer..
         Returns:
             json: Cadena de texto tipo json con los valores a ejecutar
-        """    
-        with open(os.path.join(path_to_data,f'{file}.json')) as file:
+        """
+        with open(join_func(path_to_data,f'{file}.json')) as file:
             return json.load(file)
 
     # * Funcion para listar tablas con su respectivo cid 
     def list_cid_tables() -> None:
         """
         Lista los elementos almacenados en los archivos JSON.
-        """        
+        """
         print(f"\n[ {'Table':^46} |{'origin (IP:Port) -> target (IP:Port)':^45}| {'Column Type':12} |{'CID':^8}|{'Mode':^17}|{'File':^17}]\n[{'-'*154}]")
         [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':-<47}|{i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':->16}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':-<5}->{i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':->12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':-<8}|{i['column_type'] if len(str(i['column_type'])) > 0 else 'None':-^14}|{i['cid'] if len(str(i['cid'])) > 0 else 'None':-^8}|{i['mode'] if len(str(i['mode'])) > 0 else 'None' :-^17}|{'Hora a hora':-^17}]") for i in TheExecution.data_to_run("data_to_run_hora_a_hora")]
         [ print(f"[ {i['table_name_or'] if len(str(i['table_name_or'])) > 0 else 'None':-<47}|{i['ip_or'] if len(str(i['ip_or'])) > 0 else 'None':->16}:{i['port_or'] if len(str(i['port_or'])) > 0 else 'None':-<5}->{i['ip_des'] if len(str(i['ip_des'])) > 0 else 'None':->12}:{i['port_des'] if len(str(i['port_des'])) > 0 else 'None':-<8}|{i['column_type'] if len(str(i['column_type'])) > 0 else 'None':-^14}|{i['cid'] if len(str(i['cid'])) > 0 else 'None':-^8}|{i['mode'] if len(str(i['mode'])) > 0 else 'None' :-^17}|{'Dia vencido':-^17}]") for i in TheExecution.data_to_run("data_to_run_dia_vencido")]
@@ -386,7 +397,7 @@ class TheExecution:
                 fecha_fin    = sys.argv[4] if len(sys.argv) > 4 else None
         return fecha_inicio, fecha_fin
 
-    # * Funcion de ejecucion mediante cid   
+    # * Funcion de ejecucion mediante cid
     def exec_by_cid() -> None:
         """
         Funcion para ejecutar la etl de una tabla en especifico dado su CID que se pasa como argumento
@@ -424,7 +435,7 @@ class TheExecution:
     def exec_data_auto() -> None:
         """
         Funcion que ejecutara todos los elementos dentro del archivo JSON que se encuentre en ejecucion. 
-        """        
+        """
         file_to_execute = 'data_to_run_hora_a_hora' if __CURRENT_HOUR__ not in [__HOURS_TO_EXECUTE_EXPIRED_DAY__] else 'data_to_run_dia_vencido'
         for i in TheExecution.data_to_run(file_to_execute):
             try:
@@ -451,8 +462,8 @@ class TheExecution:
         """
         Funcion main para la ejecucion mediante banderas del diccionario __DICT_ACTIONS__.
         Args:
-            action (_type_): Bandera de ejecucion que se pasa como argumento del sistema
-        """        
+            action (str): Bandera de ejecucion que se pasa como argumento del sistema
+        """
         if action in TheExecution.__DICT_ACTIONS__:
             if isinstance(TheExecution.__DICT_ACTIONS__[action], list):
                 for func in TheExecution.__DICT_ACTIONS__[action]:
@@ -474,17 +485,15 @@ class TheExecution:
 
     # * Diccionario de banderas para ejecucion por consola
     __DICT_ACTIONS__: dict[str:str]= {
-        '--help'         : show_help,               # TODO: Muestra la ayuda para ejecucion 
-        '-h'             : show_help,               # * """"""
-        '--list'         : list_cid_tables,         # TODO: lista las tablas que se estan migrando automaticamente (a dia vencido y hora a hora)
-        '-l'             : list_cid_tables,         # * """"""
-        '--cid'          : exec_by_cid,             # TODO: ejecuta una tabla en especifico de las tablas que estan automaticas cid
-        '-c'             : exec_by_cid,             # * """"""
-        '--execute'      : [exec_data_auto],        # TODO: Ejecuta una lista de funciones (las previamente menciondas en el diccionario)
-        '-exe'           : [exec_data_auto]         # * """"""
+        '--help'         : show_help,         # TODO: Muestra la ayuda para ejecucion 
+        '-h'             : show_help,         # * """"""
+        '--list'         : list_cid_tables,   # TODO: lista las tablas que se estan migrando automaticamente (a dia vencido y hora a hora)
+        '-l'             : list_cid_tables,   # * """"""
+        '--cid'          : exec_by_cid,       # TODO: ejecuta una tabla en especifico de las tablas que estan automaticas cid
+        '-c'             : exec_by_cid,       # * """"""
+        '--execute'      : [exec_data_auto],  # TODO: Ejecuta una lista de funciones (las previamente menciondas en el diccionario)
+        '-exe'           : [exec_data_auto]   # * """"""
     }
 
 if __name__ == '__main__':
-
-    pass # * Comentar esta linea para realizar pruebas con el main del archivo.
-    
+    pass # ! Todo codigo bajo esta liena no debera existir para los commits
