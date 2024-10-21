@@ -10,7 +10,7 @@ mkdir config
 echo config folder created
 mkdir data
 echo data folder created
-mkdir logs
+mkdir log
 echo logs folder created
 
 where py >nul 2>&1
