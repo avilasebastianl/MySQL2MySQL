@@ -75,16 +75,22 @@ El flujo de datos está definido por dos archivos JSON de configuración que deb
 
 > [!NOTE]
 > Existen 3 modos de insercion de datos en el destino: DELETE, TRUNCATE y REPLACE.
+
 > [!NOTE]
 > Si se da como referencia de fecha inicio y fecha fin un '*' migrara toda la informacion de dicha tabla.
+
 > [!NOTE]
 > Variable 'cid' es un numero incremental que se define manualmente en cada uno de los JSON.
+
 > [!TIP]
 > Para las tablas que se migren de un servidor a varios pueden manejar el mismo cid, asi se asegurara que iran a la par en cada ejecucion.
+
 > [!TIP]
 > Los comentarios del codigo se ven mejor usando la extencion de VScode 'Better Comments'.
+
 > [!IMPORTANT]
 > El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema.
+
 > [!CAUTION]
 > Si la tabla que se quiere migrar no se encuentra en alguno de los servidores de Big Data, asegurese que el DDL (Metadata) de la creacion de la tabla sea compatible con la configuracion (Preferiblemente realize la creacion de la tabla de manera manual en el destino a partir del DDL del origen sin CONTRAINTS, FOREIGN KEYS y/o AUTOINCREMENTALES).
 
