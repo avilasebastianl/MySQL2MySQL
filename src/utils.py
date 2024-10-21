@@ -3,24 +3,25 @@ Modulo principal de clases metodos y funciones
 # ! Developed by Big Data
 """
 
+import datetime
+import logging
+import logging.config
 import sys
 import time
-import yaml
-import json
-import logging
-import datetime
-import pandas as pd
-import logging.config
-from paths import *
 from datetime import datetime
 from urllib.parse import quote
+
+import pandas as pd
+import yaml
 from pandas import json_normalize
-from sqlalchemy.engine import reflection
-from sqlalchemy.engine.url import make_url
+from sqlalchemy import Column, MetaData, Table, create_engine, inspect, text
 from sqlalchemy.dialects.mysql import insert
-from sqlalchemy import Table, MetaData, create_engine, Column,text,Engine,inspect
-sys.path.append("config/")
-from credentials import * # type: ignore
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.engine import reflection
+
+from credentials import *  # type: ignore
+from paths import *
 
 # TODO: Configuracion de logger
 with open(join_func(path_to_config,"logger.yml")) as f:
