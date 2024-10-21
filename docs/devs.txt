@@ -1,3 +1,4 @@
 
-Developed by a Big Data Team of developers:
-@avilasebastianl -- GitHub
+Developed by a Big Data Team of developers: <> GitHub
+-> @avilasebastianl
+-------------------------------------------
