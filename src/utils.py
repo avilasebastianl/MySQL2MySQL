@@ -1,10 +1,8 @@
 """
 Modulo principal de clases metodos y funciones
-# ! Developed by: @avilasebastianl
-# ! Fecha inicio de desarrollo: 2024-07-13
+# ! Developed by Big Data
 """
 
-import os
 import sys
 import time
 import yaml
@@ -21,7 +19,7 @@ from sqlalchemy.engine import reflection
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy import Table, MetaData, create_engine, Column,text,Engine,inspect
-sys.path.append(path_to_config)
+sys.path.append("config/")
 from credentials import * # type: ignore
 
 # TODO: Configuracion de logger
@@ -29,26 +27,26 @@ with open(join_func(path_to_config,"logger.yml")) as f:
     logging.config.dictConfig(yaml.safe_load(f))
 
 # ! DECLARACION DE CONSTANTES
-# Numero entero de las horas en la se ejecutara el archivo dia_vencido.json
+# * Numero entero de las horas en la se ejecutara el archivo dia_vencido.json
 __HOURS_TO_EXECUTE_EXPIRED_DAY__:list[int] = [4,6]
-# Modos de insercion de datos en la tabla destino
+# * Modos de insercion de datos en la tabla destino
 __ETL_INSERT_MODE__:list[str] = ['delete','truncate','replace']
-# Modos de insercion de datos en la tabla destino
-__DATE_FORMAT_AVAIL__: list[str] = ['date','datetime','int','id']
-# Entero de la hora actual
+# * Modos de insercion de datos en la tabla destino
+__DATE_FORMAT_AVAIL__:list[str] = ['date','datetime','int','id']
+# * Entero de la hora actual
 __CURRENT_HOUR__:int = int(datetime.now().strftime("%H"))
-# Fecha de inicio de las consultas que no existen en el destino
+# * Fecha de inicio de las consultas que no existen en el destino
 __BASE_DATETIME_TO_EXECUTE__:str = "2024-04-01 00:00:00"
 __BASE_DATE_TO_EXECUTE__:str = "2024-04-01"
-# Cantidad de registros enviado a mysql por paquetes
+# * Cantidad de registros enviado a mysql por paquetes
 __CHUNKSIZE_TO_INSERT__:int = 150000
-# Numero de registros los cuales se filtraran cuando 
-# sea la columna filtro un autoincremental
+# * Numero de registros los cuales se filtraran cuando 
+# * sea la columna filtro un autoincremental
 __MAX_ID_TO_FILTER__:int = 50000
-# Maximo de dias que se se vann a ejecutar hacia atras
+# * Maximo de dias que se se vann a ejecutar hacia atras
 __INTERVAL_DAY_ROLL_BACK__:int = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
 __INTERVAL_HOUR_ROLL_BACK__:int = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
-# Dicionario de formatos para las fechas
+# * Dicionario de formatos para las fechas
 __DICT_DATES_FORMAT__:dict[str:str] = {
     "datetime" : "%Y-%m-%d %H:%M:%S",
     "date" : "%Y-%m-%d"
@@ -63,7 +61,7 @@ class DatabaseConnections:
     """
 
     # * Funcion para retornar cadenas de conexion a MySQL
-    def mysql_engine(ip:str, port:str, bbdd:str) -> Engine:
+    def mysql_engine(ip:str,port:str,bbdd:str) -> Engine:
         """
         Creacion de motor de MySQL para generar conexiones y acceso a metadata segun la base de datos obtenida
 
@@ -82,7 +80,7 @@ class DatabaseConnections:
             sys.exit(1)
 
     # * Funcion para obetener el usuario con el cual se hizo la url del motor de MySQL
-    def obtain_info_from_engine(engine: Engine, to_extract: str) -> str:
+    def obtain_info_from_engine(engine:Engine,to_extract:str) -> str:
         """
         Extrae información sobre el motor de MySQL basándose en el parámetro to_extract.
 
@@ -110,7 +108,7 @@ class ReadFiles:
     """
 
     # * Funcion para retornar el maximo de fecha de una tabla junto con el tipo de dato
-    def get_max_n_type(bbdd:str, table_name:str, column_name:str, order_mode:str) -> str:
+    def get_max_n_type(bbdd:str,table_name:str,column_name:str,order_mode:str) -> str:
         """
         Funcion para obtener el ultimo dato de una columna en especifica de la tabla proporcionada de manera ascendente o desendente segun parametro
 
@@ -132,7 +130,7 @@ class ReadFiles:
         return sql
 
     # * Funcion para leer querys y formatear en el caso que sea necesario
-    def get_sql_query(file:str, table_name:str=None, fecha_inicio:str=None, fecha_fin:str=None) -> str:
+    def get_sql_query(file:str,table_name:str=None,fecha_inicio:str=None,fecha_fin:str=None) -> str:
         """
         Funcion provee una query de tipo select filtrada o no segun parametros dado
 
@@ -159,7 +157,15 @@ class TheEtl:
     """
 
     # * Funcion de ETL generica
-    def generic_etl(engine_or:Engine, engine_des:Engine, table_name_or:str, table_name_des:str, column_name:str, mode:str, fecha_inicio:datetime=None, fecha_fin:datetime=None) -> None:
+    def generic_etl(
+        engine_or:Engine,
+        engine_des:Engine,
+        table_name_or:str,
+        table_name_des:str,
+        column_name:str,
+        mode:str,
+        fecha_inicio:datetime=None,
+        fecha_fin:datetime=None) -> None:
         """
         ETL generica de entornos de MySQL a MySQL para generar espejos de tablas en los servidores de Big Data
 
@@ -218,7 +224,7 @@ class TheEtl:
             logging.getLogger("dev").error(f"{e} -> {table_name_or} >> {DatabaseConnections.obtain_info_from_engine(engine_or,'info')}")
 
     # * Funcion para obtener el ultimo registro filtrando dentro de una tabla y columna especifica
-    def get_last_row(table_name:str, column_name:str, engine_des:Engine, engine_or:Engine) -> str:
+    def get_last_row(table_name:str,column_name:str,engine_des:Engine,engine_or:Engine) -> str:
         """
         Obtiene el ultimo registro (Maximo) almacenado dentro de una tabla especifica filtrando por la columna asignada en el destino. Si no existe la tabla en el destino obtendra el minimo en el origen
 
@@ -251,7 +257,7 @@ class TheEtl:
         return last_row
 
     # * Funcion para matar querys que impiden la ejecucion del replace sobre una tabla
-    def kill_processes(engine_des:Engine, table_name:str) -> None:
+    def kill_processes(engine_des:Engine,table_name:str) -> None:
         """
         Funcion para matar querys que esten obstruyendo la insercion en la tabla destino
 
@@ -484,7 +490,7 @@ class TheExecution:
             logging.getLogger("dev").error("Unknown action provided, use '--help' flag to check availables")
 
     # * Diccionario de banderas para ejecucion por consola
-    __DICT_ACTIONS__: dict[str:str]= {
+    __DICT_ACTIONS__:dict[str:str]= {
         '--help'         : show_help,         # TODO: Muestra la ayuda para ejecucion 
         '-h'             : show_help,         # * """"""
         '--list'         : list_cid_tables,   # TODO: lista las tablas que se estan migrando automaticamente (a dia vencido y hora a hora)
