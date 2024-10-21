@@ -82,7 +82,7 @@ El flujo de datos está definido por dos archivos JSON de configuración que deb
 > [!TIP]
 > Para las tablas que se migren de un servidor a varios pueden manejar el mismo cid, asi se asegurara que iran a la par en cada ejecucion.
 > [!TIP]
-> Los comentarios del codigo se ven mejor usando la extencion de VScode 'Better Comments'
+> Los comentarios del codigo se ven mejor usando la extencion de VScode 'Better Comments'.
 > [!IMPORTANT]
 > El codigo maneja rutas relativas por lo que ejecutarlo tanto en Windows como en Linux no sera problema.
 > [!CAUTION]
