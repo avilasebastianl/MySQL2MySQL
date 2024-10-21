@@ -39,7 +39,7 @@ class TheDeployment:
 
 
     # * Funcion para crear los archivos de ejecucion y actualizacion en el escritorio
-    def create_hyperlinks(self) -> None:
+    def create_hyperlinks(os:str) -> None:
         """Pregunta al usuario si desea crear los archivos de ejecucion
         y actualizacion en el escritorio como acceso directo
         """
@@ -47,7 +47,6 @@ class TheDeployment:
         ctypes.windll.shell32.SHGetFolderPathW(None, 0x00000000, None, 0, buf)
         desktop_path = buf.value
 
-        os = platform.system()
         if os == 'Linux':
             pass
         elif os == 'Windows':
@@ -75,7 +74,7 @@ class TheDeployment:
 
 if __name__ == '__main__':
     TheDeployment().build_proyect()
-    TheDeployment().create_hyperlinks()
+    TheDeployment().create_hyperlinks(os=platform.system())
     print("┌───────────────────────────────────────┐")
     print("│                SUCCESS                │")
     print("└───────────────────────────────────────┘")
