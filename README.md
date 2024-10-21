@@ -13,24 +13,22 @@ La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de ex
 ```bash
 ETL-MySQL-to-MySQL/
 │
+├── .conf/
+│
+├── bin/
+│   ├── deploy-app.bat
+│   └── deploy-app.sh
+│
 ├── config/
-│   ├── logger.yml
-│   └── credentials.py
 │
 ├── data/
-│   ├── data_to_run_hora_a_hora.json
-│   └── data_to_run_dia_vencido.json
+│
+├── log/
 │
 ├── sql/
 │
-├── docs/
-│   └── documentation.txt
-│
-├── logs/
-│   ├── execution.log
-│   └── error.log
-│
 ├── src/
+│   ├── deploy.py
 │   ├── paths.py
 │   └── utils.py
 │
@@ -42,13 +40,16 @@ ETL-MySQL-to-MySQL/
 └── requirements.txt
 ```
 
-1. config/: Carpeta que contiene los archivos de configuración de credenciales y logger.
-2. data/: Carpeta que contiene los archivos JSON que seran leidos para su ejecucion segun su hora.
-3. sql/: Sentencias SQL que definen una tabla.
-4. docs/: Carpeta que contiene la documentacion GNU que mediante la bandera --help muestra la metodologia de ejecucion con sus respectivo ejemplos.
-5. log/: Carpeta que contiene los archivos .log donde se deja registro de ejecuciones y errores.
-6. src/: Carpeta que contiene el código fuente del proyecto.
-7. Main.py: Archivo a ejecutar con entorno virtual configurado.
+1. .conf/: Carpeta que contiene los archivos plantilla de configuración usados para el deployment.
+2. bin/: Almacena los archivos ejecutables para el despliegue de la aplicacion.
+3. config/: Carpeta que contiene los archivos de configuración principales para la compilacion del script (credenciales y logger) .
+4. data/: Contiene los archivos JSON que definen las propiedades de las ETL necesarias.
+5. sql/: Sentencias SQL constantes para ejecucion de ETL.
+6. docs/: Carpeta que contiene la documentacion GNU que mediante la bandera --help muestra la metodologia de ejecucion con sus respectivo ejemplos.
+7. log/: Carpeta que contiene los archivos ficheros de logs donde se deja registro de ejecuciones y errores.
+8. src/: Carpeta que contiene el código y los modulos fuente del proyecto.
+9. Main.pyw: Archivo a ejecutar con entorno virtual configurado.
+10. requirements.txt: Librerias usadas dentro del script.
 
 ## Configuración :gear:
 
