@@ -23,6 +23,8 @@ ETL-MySQL-to-MySQL/
 │
 ├── data/
 │
+├── docs/
+│
 ├── log/
 │
 ├── sql/
