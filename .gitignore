@@ -4,10 +4,6 @@ __pycache__
 
 .vscode/*
 
-config/credentials.py
-config/logger.yml
-
-log/*.log
-
-data/data_to_run_hora_a_hora.json
-data/data_to_run_dia_vencido.json
+config
+data
+log
