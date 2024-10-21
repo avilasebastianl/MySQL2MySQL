@@ -1,9 +1,16 @@
+astroid==3.3.5
 cffi==1.16.0
+colorama==0.4.6
 cryptography==42.0.8
+dill==0.3.9
 greenlet==3.0.3
+isort==5.13.2
+mccabe==0.7.0
 numpy==2.0.0
 pandas==2.2.2
+platformdirs==4.3.6
 pycparser==2.22
+pylint==3.3.1
 PyMySQL==1.1.1
 pyodbc==5.1.0
 python-dateutil==2.9.0.post0
@@ -11,6 +18,7 @@ pytz==2024.1
 PyYAML==6.0.1
 six==1.16.0
 SQLAlchemy==2.0.31
+tomlkit==0.13.2
 typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
