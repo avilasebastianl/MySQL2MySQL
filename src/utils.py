@@ -8,6 +8,7 @@ import logging
 import logging.config
 import sys
 import time
+import json
 from datetime import datetime
 from urllib.parse import quote
 
@@ -20,8 +21,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.engine import reflection
 
-from credentials import *  # type: ignore
 from paths import *
+sys.path.append("config/")
+from credentials import *  # type: ignore
 
 # TODO: Configuracion de logger
 with open(join_func(path_to_config,"logger.yml")) as f:
@@ -232,7 +234,7 @@ class TheEtl:
         Args:
             table_name (str): Nombre de la tabla
             column_name (str): Columna asiganada para filtrar la información
-            ip (str): IP de instancia de MySQl donde se revisara la tabla
+            ip (str): IP de instancia de MySQL donde se revisara la tabla
 
         Returns:
             str: Ultimo registro dentro de la tabla, sea un tipo fecha hora o id
