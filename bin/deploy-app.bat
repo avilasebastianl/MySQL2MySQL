@@ -35,6 +35,7 @@ pip install -r requirements.txt
 echo Libraries:
 pip list
 %PYTHON_COMMAND% src\deploy.py
+%PYTHON_COMMAND% Main.pyw -h
 
 choice /M "Do you want to exit..."
 if %errorlevel%==1 (

@@ -36,6 +36,7 @@ echo "Libraries:"
 pip list
 
 $PYTHON_COMMAND src/deploy.py
+$PYTHON_COMMAND Main.pyw -h
 
 read -p "Do you want to exit? (y/n): " choice
 if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then
