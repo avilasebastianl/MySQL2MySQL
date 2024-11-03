@@ -11,12 +11,22 @@ class TheDeployment:
     """
     Clase que configura los requerimientos para ejecutar
     el script correctamente
+
+    Methods:
+    -------
+    build_proyect(self): Crea el archivo final de configuración
+    logger y otros archivos de configuración.
+
+    create_hyperlinks(self): Pregunta al usuario si desea crear los archivos de ejecucion
+    y actualizacion en el escritorio como acceso directo.
     """
 
     # *  Funcion que configura el logger basado en la maqueta
     def build_proyect(self) -> None:
         """
-        Crea el archivo final de configuración logger y otros archivos de configuración
+        Crea el archivo final de configuración logger y otros archivos de configuración.
+        Este método utiliza una maqueta de archivo para generar configuraciones en 
+        las rutas específicas y guarda los archivos configurados.
         """
         print("Creating configuration files...")
         files: dict[str, str] = {
@@ -43,7 +53,10 @@ class TheDeployment:
     def create_hyperlinks(self) -> None:
         """
         Pregunta al usuario si desea crear los archivos de ejecucion
-        y actualizacion en el escritorio como acceso directo
+        y actualizacion en el escritorio como acceso directo.
+        Este método pregunta al usuario si desea crear accesos directos de archivos `.bat`
+        en el escritorio para facilitar la ejecución y actualización del proyecto en sistemas
+        operativos Windows.
         """
         buf = ctypes.create_unicode_buffer(512)
         ctypes.windll.shell32.SHGetFolderPathW(None, 0x00000000, None, 0, buf)
