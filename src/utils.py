@@ -22,7 +22,7 @@ from sqlalchemy.engine.url import make_url
 from sqlalchemy.engine import reflection
 
 from paths import *
-sys.path.append("config/")
+sys.path.append(str(path_to_config))
 from credentials import *  # type: ignore
 
 # TODO: Configuracion de logger
@@ -46,9 +46,9 @@ __CHUNKSIZE_TO_INSERT__:int = 150000
 # * Numero de registros los cuales se filtraran cuando 
 # * sea la columna filtro un autoincremental
 __MAX_ID_TO_FILTER__:int = 50000
-# * Maximo de dias que se se vann a ejecutar hacia atras
-__INTERVAL_DAY_ROLL_BACK__:int = 7 # * Dias calendario a reejecutar (cuando la columna es tipo date)
-__INTERVAL_HOUR_ROLL_BACK__:int = 3 # * Horas a reejecutar (cuando la columna es tipo datetime)
+# * Maximo de dias que se se van a ejecutar hacia atras
+__INTERVAL_DAY_ROLL_BACK__:int = 7 # * Cuando la columna es tipo date
+__INTERVAL_HOUR_ROLL_BACK__:int = 3 # * Cuando la columna es tipo datetime
 # * Dicionario de formatos para las fechas
 __DICT_DATES_FORMAT__:dict[str:str] = {
     "datetime" : "%Y-%m-%d %H:%M:%S",
@@ -57,16 +57,18 @@ __DICT_DATES_FORMAT__:dict[str:str] = {
 
 class DatabaseConnections:
     """
-    Clase para realizar transacciones para el manejo de variables y para las conexiones a MySQL.
+    Clase para realizar transacciones para el manejo de 
+    variables y para las conexiones a MySQL.
 
-    Esta clase proporciona métodos para crear motores de MySQL y extraer información
-    relevante de dichos motores.
+    Esta clase proporciona métodos para crear motores 
+    de MySQL y extraer información relevante de dichos motores.
     """
 
     # * Funcion para retornar cadenas de conexion a MySQL
     def mysql_engine(ip:str,port:str,bbdd:str) -> Engine:
         """
-        Creacion de motor de MySQL para generar conexiones y acceso a metadata segun la base de datos obtenida
+        Creacion de motor de MySQL para generar conexiones
+        y acceso a metadata segun la base de datos obtenida
 
         Args:
             ip (str): IP de instancia de MySQL destino de conexion
@@ -74,7 +76,8 @@ class DatabaseConnections:
             bbdd (str): Base de datos donde se dea hacer la conexion
 
         Returns:
-            Engine: Motor de MySQL. Solo se accede a la metadata de la base de datos ingresada.
+            Engine: Motor de MySQL. Solo se accede a la metadata 
+            de la base de datos ingresada.
         """
         if ip in dict_user.keys(): # type:ignore
             return create_engine(f'mysql+pymysql://{dict_user.get(ip)}:{quote(dict_pwd.get(ip))}@{ip}:{port}/{bbdd}',pool_recycle=9600,isolation_level="AUTOCOMMIT") # type: ignore
@@ -505,4 +508,4 @@ class TheExecution:
     }
 
 if __name__ == '__main__':
-    pass # ! Todo codigo bajo esta liena no debera existir para los commits
+    pass # ! Todo codigo bajo esta linea no debera existir para los commits
