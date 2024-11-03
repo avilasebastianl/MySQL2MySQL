@@ -2,19 +2,21 @@
 Modulo de despliegue para configurar la aplicacion
 en nuevos dispositivos
 """
-import sys
+
 import ctypes
 import platform
 import paths
 
 class TheDeployment:
-    """Clase que configura los requerimientos para ejecutar
+    """
+    Clase que configura los requerimientos para ejecutar
     el script correctamente
     """
 
     # *  Funcion que configura el logger basado en la maqueta
     def build_proyect(self) -> None:
-        """Crea el archivo final de configuración logger y otros archivos de configuración
+        """
+        Crea el archivo final de configuración logger y otros archivos de configuración
         """
         print("Creating configuration files...")
         files: dict[str, str] = {
@@ -37,19 +39,20 @@ class TheDeployment:
                 logg.write(build)
             print(f"{file} configuration file ready.")
 
-
     # * Funcion para crear los archivos de ejecucion y actualizacion en el escritorio
-    def create_hyperlinks(os:str) -> None:
-        """Pregunta al usuario si desea crear los archivos de ejecucion
+    def create_hyperlinks(self) -> None:
+        """
+        Pregunta al usuario si desea crear los archivos de ejecucion
         y actualizacion en el escritorio como acceso directo
         """
         buf = ctypes.create_unicode_buffer(512)
         ctypes.windll.shell32.SHGetFolderPathW(None, 0x00000000, None, 0, buf)
         desktop_path = buf.value
 
-        if os == 'Linux':
-            pass
-        elif os == 'Windows':
+        operative_system = platform.system()
+        if operative_system == 'Linux':
+            print("Operative system not integrated YET.")
+        elif operative_system == 'Windows':
             while True:
                 files = {'execute.bat': 'MySQL2MySQL.bat','update.bat': 'Update-MySQL2MySQL.bat'}
                 link = input("Do you want to have desktop shortcut for execution? [Y/n]: ")
@@ -66,15 +69,16 @@ class TheDeployment:
                     break
                 if link.lower() in ['n','no']:
                     print("No shortcut was created...")
-                    sys.exit(1)
+                    break
                 else:
                     print("No match, try again... Use [Y/n]")
         else:
             print("Unsupported OS")
 
 if __name__ == '__main__':
-    TheDeployment().build_proyect()
-    TheDeployment().create_hyperlinks(os=platform.system())
+    deploy = TheDeployment()
+    deploy.build_proyect()
+    deploy.create_hyperlinks()
     print("┌───────────────────────────────────────┐")
     print("│                SUCCESS                │")
     print("└───────────────────────────────────────┘")
