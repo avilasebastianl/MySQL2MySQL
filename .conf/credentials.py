@@ -1,9 +1,10 @@
-"""Modulo de credenciales de servicios de MySQL
+"""
+Modulo de credenciales de servicios de MySQL
 origenes y destinos
 """
 
-# IP de los servicios de MySQL a los cuales el
-# el administrador tiene permisos elevados
+# * IP de los servicios de MySQL a los cuales el
+# * el administrador tiene permisos elevados
 
 admin_servers: list[str] = []
 
@@ -16,8 +17,8 @@ dict_passwords: dict[str:str] = {
     'servidor2'   : 'contraseña2'
 }
 
-# Credenciales del admin en donde
-# se llavara un registro de la metada de la ETL
+# * Credenciales del admin en donde
+# * se llevara un registro de la metadata de las ETL
 admin_user: str = ''
 admin_pswd: str = ''
 admin_bbdd: str = ''
