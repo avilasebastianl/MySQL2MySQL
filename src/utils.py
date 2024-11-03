@@ -1,5 +1,5 @@
 """
-Modulo principal de clases metodos y funciones
+Modulo principal de clases, metodos y funciones
 # ! Developed by Big Data
 """
 

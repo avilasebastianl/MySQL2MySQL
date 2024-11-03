@@ -1,5 +1,5 @@
 """
-Modulo de rutas constantes de cada carpeta del proyectos
+Modulo de rutas constantes de cada carpeta del proyecto
 """
 import os
 from pathlib import Path
