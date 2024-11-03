@@ -6,8 +6,6 @@ Este proyecto realiza una migración de información entre dos instancias de MyS
 
 La aplicación es un proceso ETL (Extract, Transform, Load) que se encarga de extraer datos de una instancia de MySQL y cargarlos en otra (espejos de información o migraciones rapidas entre servidores agedos a los que el desarrollador administra).
 
-**Developed and documented by:** [@avilasebastianl](https://github.com/avilasebastianl) :nerd_face:
-
 ## Estructura del Proyecto :bar_chart:
 
 ```bash
@@ -103,6 +101,5 @@ Para hacer uso del script del proyecto se debera ejeuctar el archivo .sh o .bat 
 
 :hammer_and_wrench: Versiones de Python con las que se ha probado el script: :snake:
 
-- [ ] Python3.9
 - [x] Python3.10
 - [x] Python3.11
