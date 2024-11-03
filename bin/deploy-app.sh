@@ -25,7 +25,13 @@ echo "Libraries:"
 pip list
 
 python3 src/deploy.py
-python3 Main.pyw -h
+
+read -p "Do you want to exit? (y/n): " choice
+if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then
+    python3 Main.pyw -h
+else
+    echo "Omiting --help flag"
+fi
 
 read -p "Do you want to exit? (y/n): " choice
 if [ "$choice" == "y" ] || [ "$choice" == "Y" ]; then

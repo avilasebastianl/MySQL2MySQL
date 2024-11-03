@@ -31,11 +31,18 @@ echo Creating virtual enviroment
 %PYTHON_COMMAND% -m venv venv --upgrade-deps
 call venv\Scripts\activate
 echo Installing libraries
-pip install -r requirements.txt
+pip install -r requirements.txt | findstr /V "Requirement already satisfied"
 echo Libraries:
 pip list
 %PYTHON_COMMAND% src\deploy.py
-%PYTHON_COMMAND% Main.pyw -h
+
+choice /M "Do you want check --help..."
+if %errorlevel%==1 (
+    %PYTHON_COMMAND% Main.pyw -h
+) else (
+    echo Omiting --help flag
+    pause
+)
 
 choice /M "Do you want to exit..."
 if %errorlevel%==1 (
